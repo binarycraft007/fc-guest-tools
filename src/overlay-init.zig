@@ -1,12 +1,25 @@
 const std = @import("std");
 const os = std.os;
+const debug = std.debug;
+const log = std.log.scoped(.init);
+const FileLogger = @import("FileLogger.zig");
 const osx = @import("osx.zig");
 
+var file_logger: FileLogger = undefined;
 const overlay_root = "/dev/vdb";
 const overlay_upper = "/overlay/root";
 const overlay_work = "/overlay/work";
 
 pub fn main() !void {
+    file_logger = try FileLogger.init("/dev/kmsg");
+    defer file_logger.deinit();
+    doOverlay() catch |err| {
+        log.err("do overlay: {}", .{err});
+    };
+    try execOrignalInit("/usr/sbin/init");
+}
+
+fn doOverlay() !void {
     // Overlay is configured under /overlay
     // Global variable overlay_root is expected to be set to a
     // block device name, relative to /dev, in which case it is assumed
@@ -25,7 +38,6 @@ pub fn main() !void {
         .rw_root = overlay_upper,
         .work_dir = overlay_work,
     });
-    try execOrignalInit("/usr/sbin/init");
 }
 
 fn execOrignalInit(init: [*:0]const u8) !void {
@@ -75,4 +87,26 @@ fn pivot(options: PivotOptions) !void {
         @intFromPtr(data.ptr),
     );
     try osx.pivortRoot("/mnt", "/mnt/rom");
+}
+
+pub const std_options = struct {
+    pub const log_level = .info;
+    pub const logFn = kmsgLogFn;
+};
+
+pub fn kmsgLogFn(
+    comptime level: std.log.Level,
+    comptime scope: @TypeOf(.EnumLiteral),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    const scope_prefix = "(" ++ @tagName(scope) ++ "): ";
+    const prefix = "[" ++ comptime level.asText() ++ "] " ++ scope_prefix;
+
+    file_logger.mutex.lock();
+    defer file_logger.mutex.unlock();
+
+    file_logger.file.writer().print(prefix ++ format ++ "\n", args) catch {
+        return;
+    };
 }
