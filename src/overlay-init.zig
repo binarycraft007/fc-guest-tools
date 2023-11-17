@@ -25,7 +25,7 @@ fn doOverlay() !void {
     // block device name, relative to /dev, in which case it is assumed
     // to contain an ext4 filesystem suitable for use as a rw overlay
     // layer. e.g. "vdb"
-    try osx.mount("overlay_root", "/overlay", "ext4", 0, 0);
+    try osx.mount(overlay_root, "/overlay", "ext4", 0, 0);
     std.fs.makeDirAbsolute(overlay_upper) catch |err| switch (err) {
         error.PathAlreadyExists => {},
         else => |e| return e,
