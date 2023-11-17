@@ -19,4 +19,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build
-        run: ci/x86_64-linux-debug.sh
+        run: ci/x86_64-linux.sh
+  aarch64-linux-debug:
+    timeout-minutes: 420
+    runs-on: "ubuntu-latest"
+    env:
+      zig_version: "0.12.0-dev.1139+4d106076c"
+      command: "zig build -Dtarget=aarch64-linux"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        run: ci/x86_64-linux.sh

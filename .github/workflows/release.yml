@@ -22,7 +22,7 @@ jobs:
           wget -O ghr.tar.gz https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz
           tar -xvf ghr.tar.gz
           mv ghr*linux_amd64/ghr .
-          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseFast" ci/x86_64-linux-debug.sh
-          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSmall" ci/x86_64-linux-debug.sh
-          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSafe" ci/x86_64-linux-debug.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseFast" ci/x86_64-linux.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSmall" ci/x86_64-linux.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSafe" ci/x86_64-linux.sh
           ./ghr -t "${{ github.token }}" -n "${{ github.event.release.tag_name }}" "${{ github.event.release.tag_name }}" zig-out/bin
