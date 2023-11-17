@@ -9,12 +9,11 @@ permissions:
     packages: write
 
 jobs:
-  x86_64-linux-release-fast:
+  build-and-release:
     timeout-minutes: 420
     runs-on: "ubuntu-latest"
     env:
       zig_version: "0.12.0-dev.1139+4d106076c"
-      command: "zig build -Dtarget=x86_64-linux -Doptimize=ReleaseFast"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -23,5 +22,7 @@ jobs:
           wget -O ghr.tar.gz https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz
           tar -xvf ghr.tar.gz
           mv ghr*linux_amd64/ghr .
-          ci/x86_64-linux-debug.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseFast" ci/x86_64-linux-debug.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSmall" ci/x86_64-linux-debug.sh
+          command="zig build -Dtarget=x86_64-linux -Doptimize=ReleaseSafe" ci/x86_64-linux-debug.sh
           ./ghr -t "${{ github.token }}" -n "${{ github.event.release.tag_name }}" "${{ github.event.release.tag_name }}" zig-out/bin

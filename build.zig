@@ -7,11 +7,13 @@ const guest_tool_src: GuestToolSrc = .{
         "src/fillmem.zig",
         "src/init.zig",
         "src/readmem.zig",
+        "src/overlay-init.zig",
     },
     .aarch64 = &.{
         "src/fillmem.zig",
         "src/init.zig",
         "src/readmem.zig",
+        "src/overlay-init.zig",
         "src/devmemread.zig",
     },
 };
@@ -24,10 +26,25 @@ pub fn build(b: *std.Build) !void {
     switch (target_info.target.cpu.arch) {
         inline .x86_64, .aarch64 => |tag| {
             inline for (@field(guest_tool_src, @tagName(tag))) |src| {
+                var buf: [256]u8 = undefined;
                 const index = mem.lastIndexOfScalar(u8, src, '.') orelse
                     @panic("file has no extension");
+                var mode = std.ArrayList(u8).init(b.allocator);
+                for (@tagName(optimize)) |c| {
+                    try mode.append(std.ascii.toLower(c));
+                }
+                defer mode.deinit();
+                const name = try std.fmt.bufPrint(
+                    &buf,
+                    "{s}-{s}-{s}",
+                    .{
+                        fs.path.basename(src[0..index]),
+                        @tagName(tag),
+                        mode.items,
+                    },
+                );
                 const exe = b.addExecutable(.{
-                    .name = fs.path.basename(src[0..index]),
+                    .name = name,
                     .root_source_file = .{ .path = src },
                     .target = target,
                     .optimize = optimize,

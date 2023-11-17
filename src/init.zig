@@ -17,9 +17,9 @@ const magic_mmio_signal_guest_boot_complete: usize = switch (builtin.cpu.arch) {
 const magic_value_signal_guest_boot_complete: usize = 123;
 
 pub fn main() !void {
-    var arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena_allocator.deinit();
-    const arena = arena_allocator.allocator();
+    var buffer: [256]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
     var fd = try os.open("/dev/mem", (os.O.RDWR | os.O.SYNC | os.O.CLOEXEC), 0);
     _ = try os.mmap(
         null,
@@ -35,8 +35,8 @@ pub fn main() !void {
 
     const init = "/sbin/init";
     const argv: []const []const u8 = &.{"/sbin/init"};
-    const argv_buf = try arena.allocSentinel(?[*:0]const u8, argv.len, null);
-    for (argv, 0..) |arg, i| argv_buf[i] = (try arena.dupeZ(u8, arg)).ptr;
+    const argv_buf = try allocator.allocSentinel(?[*:0]const u8, argv.len, null);
+    for (argv, 0..) |arg, i| argv_buf[i] = (try allocator.dupeZ(u8, arg)).ptr;
 
     const envp: [*:null]const ?[*:0]const u8 = @ptrCast(os.environ.ptr);
     const res: os.ExecveError!void = os.execveZ(init, argv_buf, envp);
